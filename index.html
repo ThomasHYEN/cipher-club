@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher Club</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --text: #e8e8e8;
+            --text-dim: #666;
+            --accent: #d4af37;
+            --error: #8b0000;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 3rem;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            margin-bottom: 2rem;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            margin-bottom: 3rem;
+            letter-spacing: 0.1em;
+        }
+
+        .puzzle-number {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 0.2em;
+            margin-bottom: 3rem;
+        }
+
+        .puzzle-content {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.25rem;
+            line-height: 1.8;
+            margin-bottom: 3rem;
+            font-style: italic;
+        }
+
+        .cipher-text {
+            font-family: 'Space Mono', monospace;
+            font-style: normal;
+            letter-spacing: 0.3em;
+            color: var(--accent);
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 1rem;
+        }
+
+        .nonogram-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .nonogram-grid {
+            display: grid;
+            grid-template-columns: 40px repeat(5, 40px);
+            grid-template-rows: 40px repeat(5, 40px);
+            gap: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .nonogram-cell {
+            width: 40px;
+            height: 40px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .nonogram-cell:hover {
+            background: #2a2a2a;
+        }
+
+        .nonogram-cell.filled {
+            background: var(--text);
+        }
+
+        .nonogram-cell.marked {
+            background: #1a1a1a;
+            position: relative;
+        }
+
+        .nonogram-cell.marked::after {
+            content: '×';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-dim);
+            font-size: 1.2rem;
+        }
+
+        .nonogram-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            background: transparent;
+            border: none;
+        }
+
+        .nonogram-hint-row {
+            justify-content: flex-end;
+            padding-right: 8px;
+        }
+
+        .nonogram-hint-col {
+            flex-direction: column;
+            padding-bottom: 4px;
+        }
+
+        .nonogram-instructions {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"], input[type="email"] {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-dim);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            padding: 0.75rem 0;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="email"]:focus {
+            border-color: var(--text);
+        }
+
+        input::placeholder {
+            color: var(--text-dim);
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--text);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.875rem;
+            letter-spacing: 0.15em;
+            padding: 1rem 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 2rem;
+        }
+
+        button:hover {
+            background: var(--text);
+            color: var(--bg);
+        }
+
+        .error {
+            color: var(--error);
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .error.show {
+            opacity: 1;
+        }
+
+        .message {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            margin-bottom: 2rem;
+            min-height: 1.5rem;
+        }
+
+        .progress {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+        }
+
+        .final-message {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .final-sub {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            margin-bottom: 3rem;
+        }
+
+        .success-check {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: var(--accent);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        select {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-dim);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            padding: 0.75rem 0;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        select:focus {
+            border-color: var(--text);
+        }
+
+        select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Landing -->
+        <div class="screen active" id="landing">
+            <h1>Cipher Club</h1>
+            <p class="subtitle">Seven puzzles. No hints.</p>
+            <button onclick="startGame()">START</button>
+        </div>
+
+        <!-- Puzzle 1: CLOCK -->
+        <div class="screen" id="puzzle1">
+            <p class="puzzle-number">01 / 07</p>
+            <p class="puzzle-content">
+                I have hands but cannot clap.<br>
+                I have a face but cannot smile.
+            </p>
+            <input type="text" id="answer1" placeholder="Answer" autocomplete="off">
+            <p class="error" id="error1">Try again.</p>
+            <button onclick="checkAnswer(1, 'clock')">SUBMIT</button>
+        </div>
+
+        <!-- Puzzle 2: INK -->
+        <div class="screen" id="puzzle2">
+            <p class="puzzle-number">02 / 07</p>
+            <p class="puzzle-content">
+                I flow but I'm not water.<br>
+                I make words but I'm not a voice.
+            </p>
+            <input type="text" id="answer2" placeholder="Answer" autocomplete="off">
+            <p class="error" id="error2">Try again.</p>
+            <button onclick="checkAnswer(2, 'ink')">SUBMIT</button>
+        </div>
+
+        <!-- Puzzle 3: PIANO -->
+        <div class="screen" id="puzzle3">
+            <p class="puzzle-number">03 / 07</p>
+            <p class="message">Most stop here.</p>
+            <p class="puzzle-content">
+                I have keys but no locks.<br>
+                I have hammers but no nails.<br>
+                I have strings but I'm not a puppet.
+            </p>
+            <input type="text" id="answer3" placeholder="Answer" autocomplete="off">
+            <p class="error" id="error3">Try again.</p>
+            <button onclick="checkAnswer(3, 'piano')">SUBMIT</button>
+        </div>
+
+        <!-- Puzzle 4: HEART (Nonogram) -->
+        <div class="screen" id="puzzle4">
+            <p class="puzzle-number">04 / 07</p>
+            <p class="puzzle-content" style="font-style: normal; font-size: 1rem;">
+                Fill the grid. What do you see?
+            </p>
+            <p class="nonogram-instructions">Click to fill. Right-click to mark empty.</p>
+            <div class="nonogram-container">
+                <div class="nonogram-grid" id="nonogramGrid">
+                    <!-- Column hints row -->
+                    <div class="nonogram-hint"></div>
+                    <div class="nonogram-hint nonogram-hint-col">2</div>
+                    <div class="nonogram-hint nonogram-hint-col">4</div>
+                    <div class="nonogram-hint nonogram-hint-col">4</div>
+                    <div class="nonogram-hint nonogram-hint-col">4</div>
+                    <div class="nonogram-hint nonogram-hint-col">2</div>
+                    
+                    <!-- Row 1: . X . X . -->
+                    <div class="nonogram-hint nonogram-hint-row">1 1</div>
+                    <div class="nonogram-cell" data-row="0" data-col="0"></div>
+                    <div class="nonogram-cell" data-row="0" data-col="1"></div>
+                    <div class="nonogram-cell" data-row="0" data-col="2"></div>
+                    <div class="nonogram-cell" data-row="0" data-col="3"></div>
+                    <div class="nonogram-cell" data-row="0" data-col="4"></div>
+                    
+                    <!-- Row 2: X X X X X -->
+                    <div class="nonogram-hint nonogram-hint-row">5</div>
+                    <div class="nonogram-cell" data-row="1" data-col="0"></div>
+                    <div class="nonogram-cell" data-row="1" data-col="1"></div>
+                    <div class="nonogram-cell" data-row="1" data-col="2"></div>
+                    <div class="nonogram-cell" data-row="1" data-col="3"></div>
+                    <div class="nonogram-cell" data-row="1" data-col="4"></div>
+                    
+                    <!-- Row 3: X X X X X -->
+                    <div class="nonogram-hint nonogram-hint-row">5</div>
+                    <div class="nonogram-cell" data-row="2" data-col="0"></div>
+                    <div class="nonogram-cell" data-row="2" data-col="1"></div>
+                    <div class="nonogram-cell" data-row="2" data-col="2"></div>
+                    <div class="nonogram-cell" data-row="2" data-col="3"></div>
+                    <div class="nonogram-cell" data-row="2" data-col="4"></div>
+                    
+                    <!-- Row 4: . X X X . -->
+                    <div class="nonogram-hint nonogram-hint-row">3</div>
+                    <div class="nonogram-cell" data-row="3" data-col="0"></div>
+                    <div class="nonogram-cell" data-row="3" data-col="1"></div>
+                    <div class="nonogram-cell" data-row="3" data-col="2"></div>
+                    <div class="nonogram-cell" data-row="3" data-col="3"></div>
+                    <div class="nonogram-cell" data-row="3" data-col="4"></div>
+                    
+                    <!-- Row 5: . . X . . -->
+                    <div class="nonogram-hint nonogram-hint-row">1</div>
+                    <div class="nonogram-cell" data-row="4" data-col="0"></div>
+                    <div class="nonogram-cell" data-row="4" data-col="1"></div>
+                    <div class="nonogram-cell" data-row="4" data-col="2"></div>
+                    <div class="nonogram-cell" data-row="4" data-col="3"></div>
+                    <div class="nonogram-cell" data-row="4" data-col="4"></div>
+                </div>
+            </div>
+            <input type="text" id="answer4" placeholder="What shape is it?" autocomplete="off">
+            <p class="error" id="error4">Try again.</p>
+            <button onclick="checkAnswer(4, 'heart', ['love', 'a heart'])">SUBMIT</button>
+        </div>
+
+        <!-- Puzzle 5: ECHO (Cipher) -->
+        <div class="screen" id="puzzle5">
+            <p class="puzzle-number">05 / 07</p>
+            <p class="puzzle-content">
+                <span class="cipher-text">HFKR</span>
+            </p>
+            <p class="hint">−3</p>
+            <input type="text" id="answer5" placeholder="Decode" autocomplete="off">
+            <p class="error" id="error5">Try again.</p>
+            <button onclick="checkAnswer(5, 'echo')">SUBMIT</button>
+        </div>
+
+        <!-- Puzzle 6: RIVER -->
+        <div class="screen" id="puzzle6">
+            <p class="puzzle-number">06 / 07</p>
+            <p class="message">One left.</p>
+            <p class="puzzle-content">
+                I have a bed but never sleep.<br>
+                I have a mouth but never speak.<br>
+                I run but have no legs.
+            </p>
+            <input type="text" id="answer6" placeholder="Answer" autocomplete="off">
+            <p class="error" id="error6">Try again.</p>
+            <button onclick="checkAnswer(6, 'river')">SUBMIT</button>
+        </div>
+
+        <!-- Puzzle 7: Meta -->
+        <div class="screen" id="puzzle7">
+            <p class="puzzle-number">07 / 07</p>
+            <p class="puzzle-content" style="font-style: normal; font-size: 1rem;">
+                Your answers:<br><br>
+                <span style="color: var(--accent);">C</span>LOCK<br>
+                <span style="color: var(--accent);">I</span>NK<br>
+                <span style="color: var(--accent);">P</span>IANO<br>
+                <span style="color: var(--accent);">H</span>EART<br>
+                <span style="color: var(--accent);">E</span>CHO<br>
+                <span style="color: var(--accent);">R</span>IVER<br><br>
+                <em>First letters.</em>
+            </p>
+            <input type="text" id="answer7" placeholder="Final answer" autocomplete="off">
+            <p class="error" id="error7">Try again.</p>
+            <button onclick="checkAnswer(7, 'cipher')">SUBMIT</button>
+        </div>
+
+        <!-- Success -->
+        <div class="screen" id="success">
+            <p class="success-check">◆</p>
+            <p class="final-message">You're in.</p>
+            <p class="final-sub">We're building the future of puzzles.<br>You'll hear from us soon.</p>
+            <div class="form-group">
+                <input type="text" id="firstName" placeholder="First name" autocomplete="given-name">
+            </div>
+            <div class="form-group">
+                <input type="text" id="lastName" placeholder="Last name" autocomplete="family-name">
+            </div>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="Email" autocomplete="email">
+            </div>
+            <div class="form-group">
+                <select id="country">
+                    <option value="">Country</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="AU">Australia</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="ES">Spain</option>
+                    <option value="IT">Italy</option>
+                    <option value="NL">Netherlands</option>
+                    <option value="SE">Sweden</option>
+                    <option value="NO">Norway</option>
+                    <option value="DK">Denmark</option>
+                    <option value="FI">Finland</option>
+                    <option value="IE">Ireland</option>
+                    <option value="NZ">New Zealand</option>
+                    <option value="SG">Singapore</option>
+                    <option value="JP">Japan</option>
+                    <option value="KR">South Korea</option>
+                    <option value="IN">India</option>
+                    <option value="BR">Brazil</option>
+                    <option value="MX">Mexico</option>
+                    <option value="AR">Argentina</option>
+                    <option value="ZA">South Africa</option>
+                    <option value="AE">United Arab Emirates</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+            <button onclick="submitEmail()">JOIN</button>
+            <p class="error" id="emailError"></p>
+        </div>
+
+        <!-- Thank You -->
+        <div class="screen" id="thankyou">
+            <p class="success-check">◆</p>
+            <p class="final-message">Welcome to Cipher Club.</p>
+            <p class="final-sub">Check your inbox.</p>
+        </div>
+    </div>
+
+    <div class="progress" id="progress"></div>
+
+    <script>
+        let currentPuzzle = 0;
+
+        function startGame() {
+            showScreen('puzzle1');
+            currentPuzzle = 1;
+            updateProgress();
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function updateProgress() {
+            const progress = document.getElementById('progress');
+            if (currentPuzzle > 0 && currentPuzzle <= 7) {
+                progress.textContent = currentPuzzle + ' / 7';
+            } else {
+                progress.textContent = '';
+            }
+        }
+
+        function checkAnswer(puzzleNum, correctAnswer, alternates = []) {
+            const input = document.getElementById('answer' + puzzleNum);
+            const error = document.getElementById('error' + puzzleNum);
+            const answer = input.value.toLowerCase().trim();
+            
+            const allCorrect = [correctAnswer, ...alternates];
+            
+            if (allCorrect.includes(answer)) {
+                error.classList.remove('show');
+                if (puzzleNum < 7) {
+                    currentPuzzle = puzzleNum + 1;
+                    showScreen('puzzle' + currentPuzzle);
+                    updateProgress();
+                } else {
+                    currentPuzzle = 0;
+                    showScreen('success');
+                    updateProgress();
+                }
+            } else {
+                error.classList.add('show');
+                input.value = '';
+            }
+        }
+
+        function submitEmail() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const country = document.getElementById('country').value;
+            const error = document.getElementById('emailError');
+            
+            if (!firstName) {
+                error.textContent = 'Enter your first name.';
+                error.classList.add('show');
+                return;
+            }
+            
+            if (!lastName) {
+                error.textContent = 'Enter your last name.';
+                error.classList.add('show');
+                return;
+            }
+            
+            if (!email || !email.includes('@')) {
+                error.textContent = 'Enter a valid email.';
+                error.classList.add('show');
+                return;
+            }
+            
+            if (!country) {
+                error.textContent = 'Select your country.';
+                error.classList.add('show');
+                return;
+            }
+            
+            // In production, send to your email service here
+            console.log('Signup:', { firstName, lastName, email, country });
+            showScreen('thankyou');
+        }
+
+        // Nonogram functionality
+        document.querySelectorAll('.nonogram-cell').forEach(cell => {
+            cell.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (cell.classList.contains('filled')) {
+                    cell.classList.remove('filled');
+                } else {
+                    cell.classList.remove('marked');
+                    cell.classList.add('filled');
+                }
+            });
+            
+            cell.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (cell.classList.contains('marked')) {
+                    cell.classList.remove('marked');
+                } else {
+                    cell.classList.remove('filled');
+                    cell.classList.add('marked');
+                }
+            });
+        });
+
+        // Allow Enter key to submit
+        document.querySelectorAll('input[type="text"], input[type="email"]').forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const button = input.parentElement.querySelector('button');
+                    if (button) button.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
